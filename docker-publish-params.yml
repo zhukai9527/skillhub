@@ -1,0 +1,41 @@
+﻿# Docker Hub 发布参数（GitHub Actions）
+# 填完后发我，我会按这个生成可用的 workflow 文件
+
+dockerhub:
+  namespace: "zack2025"          # 必填：Docker Hub 用户名或组织名，例如 zhkai
+  repository: "skillhub"         # 必填：Docker Hub 仓库名，例如 skillhub-web
+  image_full_name: "zack2025/skillhub"    # 选填：不填则自动使用 namespace/repository
+
+build:
+  dockerfile_path: "./Dockerfile"   # 必填
+  build_context: "."                # 必填
+  platforms: "linux/amd64"          # 必填；多架构示例：linux/amd64,linux/arm64
+  build_args: ""                    # 选填；示例：NODE_ENV=production,API_BASE=/api
+  target_stage: ""                  # 选填；多阶段构建 target
+  cache_from: ""                    # 选填
+  cache_to: ""                      # 选填
+
+github:
+  workflow_file_path: ".github/workflows/docker-publish.yml"  # 必填
+  default_branch: "main"                                      # 必填
+  trigger_branches: "main"                                    # 必填；多个用逗号分隔，如 main,develop
+  trigger_tags: "v*.*.*"                                      # 选填；不需要可留空
+  enable_workflow_dispatch: true                              # 选填：是否支持手动触发
+
+secrets:
+  username_secret_name: "DOCKERHUB_USERNAME"  # 必填：GitHub Secret 名称（不是值）
+  token_secret_name: "DOCKERHUB_TOKEN"        # 必填：GitHub Secret 名称（不是值）
+
+tags:
+  on_main: "latest"   # 必填：main 分支触发时的 tag 规则
+  on_develop: ""                      # 选填：如 dev-<short_sha>
+  on_git_tag: "<git_tag>"             # 必填：git tag 触发时的 tag 规则
+  overwrite_latest: true              # 必填：是否更新 latest
+
+publish_policy:
+  run_tests_before_publish: false     # 选填：发布前是否先跑测试
+  publish_failure_blocks_pipeline: true  # 选填：发布失败是否阻塞流程
+  push_image: true                    # 选填：是否真的 push（调试可设 false）
+
+notes: ""  # 选填：其他约束（网络代理、安全要求、命名规范等）
+
