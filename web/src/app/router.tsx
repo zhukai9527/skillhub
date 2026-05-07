@@ -65,6 +65,7 @@ const LandingPage = createLazyRouteComponent(() => import('@/pages/landing'), 'L
 const HomePage = createLazyRouteComponent(() => import('@/pages/home'), 'HomePage')
 const LoginPage = createLazyRouteComponent(() => import('@/pages/login'), 'LoginPage')
 const RegisterPage = createLazyRouteComponent(() => import('@/pages/register'), 'RegisterPage')
+const ResetPasswordPage = createLazyRouteComponent(() => import('@/pages/reset-password'), 'ResetPasswordPage')
 const PrivacyPolicyPage = createLazyRouteComponent(() => import('@/pages/privacy'), 'PrivacyPolicyPage')
 const SearchPage = createLazyRouteComponent(() => import('@/pages/search'), 'SearchPage')
 const TermsOfServicePage = createLazyRouteComponent(() => import('@/pages/terms'), 'TermsOfServicePage')
@@ -85,28 +86,25 @@ const NamespaceReviewsPage = createLazyRouteComponent(
   () => import('@/pages/dashboard/namespace-reviews'),
   'NamespaceReviewsPage',
 )
-const GovernancePage = createLazyRouteComponent(() => import('@/pages/dashboard/governance'), 'GovernancePage')
-const ReviewsPage = createRoleProtectedRouteComponent(
-  () => import('@/pages/dashboard/reviews'),
-  'ReviewsPage',
-  ['SKILL_ADMIN', 'NAMESPACE_ADMIN', 'USER_ADMIN', 'SUPER_ADMIN'],
+const NamespaceReviewDetailPage = createLazyRouteComponent(
+  () => import('@/pages/dashboard/review-detail'),
+  'NamespaceReviewDetailPage',
 )
+const GovernancePage = createLazyRouteComponent(() => import('@/pages/dashboard/governance'), 'GovernancePage')
+const ReviewsPage = createLazyRouteComponent(() => import('@/pages/dashboard/reviews'), 'ReviewsPage')
 const ReportsPage = createRoleProtectedRouteComponent(
   () => import('@/pages/dashboard/reports'),
   'ReportsPage',
   ['SKILL_ADMIN', 'SUPER_ADMIN'],
 )
-const ReviewDetailPage = createRoleProtectedRouteComponent(
-  () => import('@/pages/dashboard/review-detail'),
-  'ReviewDetailPage',
-  ['SKILL_ADMIN', 'NAMESPACE_ADMIN', 'SUPER_ADMIN'],
-)
+const ReviewDetailPage = createLazyRouteComponent(() => import('@/pages/dashboard/review-detail'), 'ReviewDetailPage')
 const PromotionsPage = createRoleProtectedRouteComponent(
   () => import('@/pages/dashboard/promotions'),
   'PromotionsPage',
   ['SKILL_ADMIN', 'SUPER_ADMIN'],
 )
 const MyStarsPage = createLazyRouteComponent(() => import('@/pages/dashboard/stars'), 'MyStarsPage')
+const MySubscriptionsPage = createLazyRouteComponent(() => import('@/pages/dashboard/subscriptions'), 'MySubscriptionsPage')
 const NotificationsPage = createLazyRouteComponent(() => import('@/pages/notifications'), 'NotificationsPage')
 const TokensPage = createLazyRouteComponent(() => import('@/pages/dashboard/tokens'), 'TokensPage')
 const CliAuthPage = createLazyRouteComponent(() => import('@/pages/cli-auth'), 'CliAuthPage')
@@ -184,6 +182,12 @@ const registerRoute = createRoute({
   component: RegisterPage,
 })
 
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'reset-password',
+  component: ResetPasswordPage,
+})
+
 const privacyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'privacy',
@@ -221,7 +225,6 @@ const namespaceRoute = createRoute({
 const skillDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/space/$namespace/$slug',
-  beforeLoad: requireAuth,
   validateSearch: (search: Record<string, unknown>): { returnTo?: string } => ({
     returnTo: typeof search.returnTo === 'string' && search.returnTo.startsWith('/') ? search.returnTo : undefined,
   }),
@@ -246,6 +249,10 @@ const dashboardPublishRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/publish',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { namespace?: string; visibility?: string } => ({
+    namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace : undefined,
+    visibility: typeof search.visibility === 'string' && search.visibility ? search.visibility : undefined,
+  }),
   component: PublishPage,
 })
 
@@ -298,6 +305,13 @@ const dashboardReviewDetailRoute = createRoute({
   component: ReviewDetailPage,
 })
 
+const dashboardNamespaceReviewDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/namespaces/$slug/reviews/$id',
+  beforeLoad: requireAuth,
+  component: NamespaceReviewDetailPage,
+})
+
 const dashboardPromotionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/promotions',
@@ -310,6 +324,13 @@ const dashboardStarsRoute = createRoute({
   path: 'dashboard/stars',
   beforeLoad: requireAuth,
   component: MyStarsPage,
+})
+
+const dashboardSubscriptionsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/subscriptions',
+  beforeLoad: requireAuth,
+  component: MySubscriptionsPage,
 })
 
 const dashboardNotificationsRoute = createRoute({
@@ -397,6 +418,7 @@ const routeTree = rootRoute.addChildren([
   skillsRoute,
   loginRoute,
   registerRoute,
+  resetPasswordRoute,
   privacyRoute,
   searchRoute,
   termsRoute,
@@ -408,12 +430,14 @@ const routeTree = rootRoute.addChildren([
   dashboardNamespacesRoute,
   dashboardNamespaceMembersRoute,
   dashboardNamespaceReviewsRoute,
+  dashboardNamespaceReviewDetailRoute,
   dashboardGovernanceRoute,
   dashboardReviewsRoute,
   dashboardReportsRoute,
   dashboardReviewDetailRoute,
   dashboardPromotionsRoute,
   dashboardStarsRoute,
+  dashboardSubscriptionsRoute,
   dashboardNotificationsRoute,
   dashboardTokensRoute,
   cliAuthRoute,

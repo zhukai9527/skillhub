@@ -468,6 +468,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skills/{namespace}/{slug}/submit-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submitForReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/skills/{namespace}/{slug}/submit-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submitForReview_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/skills/{namespace}/{slug}/reports": {
         parameters: {
             query?: never;
@@ -494,6 +526,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["submitReport_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/skills/{namespace}/{slug}/confirm-publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmPublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/{namespace}/{slug}/confirm-publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmPublish_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -852,6 +916,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/namespaces/{slug}/members/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["batchAddMembers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/namespaces/{slug}/members/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["batchAddMembers_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/namespaces/{slug}/members": {
         parameters: {
             query?: never;
@@ -1140,6 +1236,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/local/password-reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/local/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/local/login": {
         parameters: {
             query?: never;
@@ -1214,6 +1342,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["requestDeviceCode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{userId}/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["triggerPasswordReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3189,6 +3333,11 @@ export interface components {
         };
         SkillVersionRereleaseRequest: {
             targetVersion: string;
+            confirmWarnings?: boolean;
+        };
+        SubmitReviewRequest: {
+            version: string;
+            targetVisibility: string;
         };
         SkillReportSubmitRequest: {
             reason?: string;
@@ -3207,6 +3356,9 @@ export interface components {
             /** Format: int64 */
             reportId?: number;
             status?: string;
+        };
+        ConfirmPublishRequest: {
+            version: string;
         };
         AdminSkillActionRequest: {
             reason?: string;
@@ -3309,10 +3461,37 @@ export interface components {
             /** Format: int64 */
             targetNamespaceId?: number;
         };
+        BatchMemberRequest: {
+            members: components["schemas"]["MemberRequest"][];
+        };
         MemberRequest: {
             userId: string;
             /** @enum {string} */
             role: "OWNER" | "ADMIN" | "MEMBER";
+        };
+        ApiResponseBatchMemberResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["BatchMemberResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        BatchMemberResponse: {
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            successCount?: number;
+            /** Format: int32 */
+            failureCount?: number;
+            results?: components["schemas"]["BatchMemberResult"][];
+        };
+        BatchMemberResult: {
+            userId?: string;
+            role?: string;
+            success?: boolean;
+            error?: string;
         };
         NamespaceLifecycleRequest: {
             reason?: string;
@@ -3413,7 +3592,15 @@ export interface components {
         LocalRegisterRequest: {
             username: string;
             password: string;
-            email?: string;
+            email: string;
+        };
+        PasswordResetRequestDto: {
+            email: string;
+        };
+        PasswordResetConfirmRequest: {
+            email: string;
+            code: string;
+            newPassword: string;
         };
         LocalLoginRequest: {
             username: string;
@@ -5512,6 +5699,60 @@ export interface operations {
             };
         };
     };
+    submitForReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillLifecycleMutationResponse"];
+                };
+            };
+        };
+    };
+    submitForReview_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillLifecycleMutationResponse"];
+                };
+            };
+        };
+    };
     submitReport: {
         parameters: {
             query?: never;
@@ -5562,6 +5803,60 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseSkillReportMutationResponse"];
+                };
+            };
+        };
+    };
+    confirmPublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPublishRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillLifecycleMutationResponse"];
+                };
+            };
+        };
+    };
+    confirmPublish_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPublishRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillLifecycleMutationResponse"];
                 };
             };
         };
@@ -5624,6 +5919,7 @@ export interface operations {
         parameters: {
             query: {
                 visibility: string;
+                confirmWarnings?: boolean;
             };
             header?: never;
             path: {
@@ -5655,6 +5951,7 @@ export interface operations {
         parameters: {
             query: {
                 visibility: string;
+                confirmWarnings?: boolean;
             };
             header?: never;
             path: {
@@ -6218,6 +6515,58 @@ export interface operations {
             };
         };
     };
+    batchAddMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBatchMemberResponse"];
+                };
+            };
+        };
+    };
+    batchAddMembers_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBatchMemberResponse"];
+                };
+            };
+        };
+    };
     listMembers: {
         parameters: {
             query: {
@@ -6678,6 +7027,7 @@ export interface operations {
             query: {
                 payload: string;
                 files: string[];
+                confirmWarnings?: boolean;
             };
             header?: never;
             path?: never;
@@ -6722,6 +7072,7 @@ export interface operations {
         parameters: {
             query: {
                 namespace: string;
+                confirmWarnings?: boolean;
             };
             header?: never;
             path?: never;
@@ -6815,6 +7166,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseAuthMeResponse"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -6931,6 +7330,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseDeviceCodeResponse"];
+                };
+            };
+        };
+    };
+    triggerPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };

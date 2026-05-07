@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public final class SkillPackagePolicy {
 
-    public static final int MAX_FILE_COUNT = 100;
+    public static final int MAX_FILE_COUNT = 500;
     public static final long MAX_SINGLE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     public static final long MAX_TOTAL_PACKAGE_SIZE = 100 * 1024 * 1024; // 100MB
     public static final String SKILL_MD_PATH = "SKILL.md";
@@ -25,7 +25,7 @@ public final class SkillPackagePolicy {
             // Configuration and schemas
             ".toml", ".xml", ".xsd", ".xsl", ".dtd", ".ini", ".cfg", ".env",
             // Scripts and source code
-            ".js", ".ts", ".py", ".sh", ".rb", ".go", ".rs", ".java", ".kt",
+            ".js", ".cjs", ".mjs", ".ts", ".py", ".sh", ".rb", ".go", ".rs", ".java", ".kt",
             ".lua", ".sql", ".r", ".bat", ".ps1", ".zsh", ".bash",
             // Images
             ".png", ".jpg", ".jpeg", ".svg", ".gif", ".webp", ".ico",
@@ -126,7 +126,8 @@ public final class SkillPackagePolicy {
     private static boolean isTextExtension(String path) {
         return path.endsWith(".md") || path.endsWith(".txt")
                 || path.endsWith(".json") || path.endsWith(".yaml") || path.endsWith(".yml")
-                || path.endsWith(".js") || path.endsWith(".ts") || path.endsWith(".py") || path.endsWith(".sh")
+                || path.endsWith(".js") || path.endsWith(".cjs") || path.endsWith(".mjs")
+                || path.endsWith(".ts") || path.endsWith(".py") || path.endsWith(".sh")
                 || path.endsWith(".html") || path.endsWith(".css") || path.endsWith(".csv")
                 || path.endsWith(".toml") || path.endsWith(".xml") || path.endsWith(".xsd")
                 || path.endsWith(".xsl") || path.endsWith(".dtd") || path.endsWith(".ini")

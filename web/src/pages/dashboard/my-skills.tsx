@@ -61,6 +61,13 @@ export function MySkillsPage() {
     })
   }
 
+  const handleUpdateSkill = (namespace: string, visibility?: string) => {
+    navigate({
+      to: '/dashboard/publish',
+      search: { namespace, visibility: visibility || 'PUBLIC' },
+    })
+  }
+
   const resolveStatusLabel = (status?: string) => {
     if (status === 'HIDDEN') {
       return t('mySkills.statusHidden')
@@ -82,6 +89,9 @@ export function MySkillsPage() {
     }
     if (status === 'SCAN_FAILED') {
       return t('mySkills.statusScanFailed')
+    }
+    if (status === 'UPLOADED') {
+      return t('skillDetail.versionStatusUploaded')
     }
     return status
   }
@@ -107,6 +117,9 @@ export function MySkillsPage() {
     }
     if (status === 'SCAN_FAILED') {
       return 'status-pill status-pill--rejected'
+    }
+    if (status === 'UPLOADED') {
+      return 'status-pill status-pill--review'
     }
     return 'status-pill'
   }
@@ -300,6 +313,18 @@ export function MySkillsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 pl-4">
+                        {skill.status !== 'ARCHIVED' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              handleUpdateSkill(skill.namespace, skill.visibility ?? 'PUBLIC')
+                            }}
+                          >
+                            {t('mySkills.update')}
+                          </Button>
+                        )}
                         {hasPendingPreview && ownerPreviewVersion ? (
                           <Button
                             size="sm"

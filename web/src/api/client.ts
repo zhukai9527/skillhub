@@ -2,6 +2,8 @@ import createClient from 'openapi-fetch'
 import type { paths } from './generated/schema'
 import type {
   ChangePasswordRequest,
+  PasswordResetConfirmRequest,
+  PasswordResetRequest,
   ApiToken,
   CreateTokenRequest,
   CreateTokenResponse,
@@ -38,6 +40,7 @@ import type {
   AdminLabelInput,
   LabelDefinition,
   LabelItem,
+  BatchMemberResponse,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
@@ -354,6 +357,26 @@ export const authApi = {
     })
   },
 
+  async requestPasswordReset(request: PasswordResetRequest): Promise<void> {
+    await fetchJson<void>('/api/v1/auth/local/password-reset/request', {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(request),
+    })
+  },
+
+  async confirmPasswordReset(request: PasswordResetConfirmRequest): Promise<void> {
+    await fetchJson<void>('/api/v1/auth/local/password-reset/confirm', {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(request),
+    })
+  },
+
   async logout(): Promise<void> {
     const response = await fetch('/api/v1/auth/logout', {
       method: 'POST',
@@ -466,14 +489,44 @@ export const skillLifecycleApi = {
     })
   },
 
-  async rereleaseVersion(namespace: string, slug: string, version: string, targetVersion: string): Promise<void> {
+  async rereleaseVersion(namespace: string, slug: string, version: string, targetVersion: string, confirmWarnings = false): Promise<void> {
     const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
     await fetchJson<void>(`${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}/rerelease`, {
       method: 'POST',
       headers: await ensureCsrfHeaders({
         'Content-Type': 'application/json',
       }),
-      body: JSON.stringify({ targetVersion }),
+      body: JSON.stringify({ targetVersion, confirmWarnings }),
+    })
+  },
+
+  /**
+   * Submit an UPLOADED version for review.
+   * Transitions version status from UPLOADED to PENDING_REVIEW.
+   */
+  async submitForReview(namespace: string, slug: string, version: string, targetVisibility: 'PUBLIC' | 'NAMESPACE_ONLY'): Promise<void> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    await fetchJson<void>(`${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/submit-review`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ version, targetVisibility }),
+    })
+  },
+
+  /**
+   * Confirm publish for a PRIVATE skill version.
+   * Transitions version status from UPLOADED to PUBLISHED without review.
+   */
+  async confirmPublish(namespace: string, slug: string, version: string): Promise<void> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    await fetchJson<void>(`${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/confirm-publish`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ version }),
     })
   },
 }
@@ -647,6 +700,16 @@ export const namespaceApi = {
         userId: request.userId.trim(),
         role: request.role,
       }),
+    })
+  },
+
+  async batchAddMembers(slug: string, members: Array<{ userId: string; role: string }>): Promise<BatchMemberResponse> {
+    return fetchJson<BatchMemberResponse>(`${WEB_API_PREFIX}/namespaces/${normalizeNamespaceSlug(slug)}/members/batch`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ members }),
     })
   },
 
@@ -957,6 +1020,30 @@ export const meApi = {
 
     return items
   },
+
+  async getSubscriptionsPage(params?: { page?: number; size?: number }): Promise<{ items: SkillSummary[]; total: number; page: number; size: number }> {
+    const searchParams = new URLSearchParams()
+    searchParams.set('page', String(params?.page ?? 0))
+    searchParams.set('size', String(params?.size ?? 12))
+    return fetchJson<{ items: SkillSummary[]; total: number; page: number; size: number }>(`${WEB_API_PREFIX}/me/subscriptions?${searchParams.toString()}`)
+  },
+
+  async getSubscriptions(): Promise<SkillSummary[]> {
+    const items: SkillSummary[] = []
+    let page = 0
+    const size = 100
+    let hasMore = true
+
+    while (hasMore) {
+      const response = await meApi.getSubscriptionsPage({ page, size })
+      items.push(...response.items)
+
+      hasMore = (page + 1) * response.size < response.total && response.items.length > 0
+      page++
+    }
+
+    return items
+  },
 }
 
 export const profileApi = {
@@ -1058,6 +1145,13 @@ export const adminApi = {
 
   async enableUser(userId: string): Promise<void> {
     await fetchJson<void>(`/api/v1/admin/users/${userId}/enable`, {
+      method: 'POST',
+      headers: getCsrfHeaders(),
+    })
+  },
+
+  async triggerPasswordReset(userId: string): Promise<void> {
+    await fetchJson<void>(`/api/v1/admin/users/${userId}/password-reset`, {
       method: 'POST',
       headers: getCsrfHeaders(),
     })

@@ -5,6 +5,8 @@ import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
+import com.iflytek.skillhub.dto.BatchMemberRequest;
+import com.iflytek.skillhub.dto.BatchMemberResponse;
 import com.iflytek.skillhub.dto.MemberRequest;
 import com.iflytek.skillhub.dto.MemberResponse;
 import com.iflytek.skillhub.dto.MessageResponse;
@@ -55,8 +57,10 @@ public class NamespaceController extends BaseApiController {
     }
 
     @GetMapping("/namespaces")
-    public ApiResponse<PageResponse<NamespaceResponse>> listNamespaces(Pageable pageable) {
-        return ok("response.success.read", namespacePortalQueryAppService.listNamespaces(pageable));
+    public ApiResponse<PageResponse<NamespaceResponse>> listNamespaces(
+            Pageable pageable,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+        return ok("response.success.read", namespacePortalQueryAppService.listNamespaces(pageable, userNsRoles));
     }
 
     @GetMapping("/me/namespaces")
@@ -68,7 +72,7 @@ public class NamespaceController extends BaseApiController {
 
     @GetMapping("/namespaces/{slug}")
     public ApiResponse<NamespaceResponse> getNamespace(@PathVariable String slug,
-                                                       @RequestAttribute(value = "userId", required = false) String userId,
+                                                       @RequestAttribute("userId") String userId,
                                                        @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
         return ok("response.success.read",
                 namespacePortalQueryAppService.getNamespace(slug, userId, userNsRoles));
@@ -163,6 +167,15 @@ public class NamespaceController extends BaseApiController {
             @RequestAttribute("userId") String userId) {
         return ok("response.success.created",
                 namespacePortalCommandAppService.addMember(slug, request.userId(), request.role(), userId));
+    }
+
+    @PostMapping("/namespaces/{slug}/members/batch")
+    public ApiResponse<BatchMemberResponse> batchAddMembers(
+            @PathVariable String slug,
+            @Valid @RequestBody BatchMemberRequest request,
+            @RequestAttribute("userId") String userId) {
+        return ok("response.success.created",
+                namespacePortalCommandAppService.batchAddMembers(slug, request.members(), userId));
     }
 
     @DeleteMapping("/namespaces/{slug}/members/{userId}")

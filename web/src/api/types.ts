@@ -53,11 +53,21 @@ export interface LocalLoginRequest {
 }
 
 export interface LocalRegisterRequest extends LocalLoginRequest {
-  email?: string
+  email: string
 }
 
 export interface ChangePasswordRequest {
   currentPassword: string
+  newPassword: string
+}
+
+export interface PasswordResetRequest {
+  email: string
+}
+
+export interface PasswordResetConfirmRequest {
+  email: string
+  code: string
   newPassword: string
 }
 
@@ -129,12 +139,27 @@ export interface NamespaceCandidateUser {
   status: string
 }
 
+export interface BatchMemberResult {
+  userId: string
+  role: string
+  success: boolean
+  error?: string
+}
+
+export interface BatchMemberResponse {
+  totalCount: number
+  successCount: number
+  failureCount: number
+  results: BatchMemberResult[]
+}
+
 // Skill types
 export interface SkillSummary {
   id: number
   slug: string
   displayName: string
   summary?: string
+  visibility?: string
   status?: string
   downloadCount: number
   starCount: number
