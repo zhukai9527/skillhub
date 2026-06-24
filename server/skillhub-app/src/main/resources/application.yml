@@ -93,6 +93,8 @@ spring:
             enable: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:false}
 
 skillhub:
+  builtin-skills:
+    enabled: ${SKILLHUB_BUILTIN_SKILLS_ENABLED:true}
   auth:
     mock:
       enabled: ${SKILLHUB_AUTH_MOCK_ENABLED:false}
@@ -120,6 +122,7 @@ skillhub:
       secret-key: ${SKILLHUB_STORAGE_S3_SECRET_KEY:}
       region: ${SKILLHUB_STORAGE_S3_REGION:us-east-1}
       force-path-style: ${SKILLHUB_STORAGE_S3_FORCE_PATH_STYLE:true}
+      disable-chunked-encoding: ${SKILLHUB_STORAGE_S3_DISABLE_CHUNKED_ENCODING:false}
       auto-create-bucket: ${SKILLHUB_STORAGE_S3_AUTO_CREATE_BUCKET:false}
       presign-expiry: ${SKILLHUB_STORAGE_S3_PRESIGN_EXPIRY:PT10M}
       max-connections: ${SKILLHUB_STORAGE_S3_MAX_CONNECTIONS:100}
@@ -141,7 +144,7 @@ skillhub:
     download:
       anonymous-cookie-name: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_NAME:skillhub_anon_dl}
       anonymous-cookie-max-age: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_MAX_AGE:P30D}
-      anonymous-cookie-secret: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET:change-me-in-production}
+      anonymous-cookie-secret: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET:}
   publish:
     max-file-count: 100
     max-single-file-size: 10485760 # 10MB
@@ -163,7 +166,7 @@ skillhub:
     verification-uri: ${DEVICE_AUTH_VERIFICATION_URI:${skillhub.public.base-url:}/cli/auth}
   security:
     scanner:
-      enabled: ${SKILLHUB_SECURITY_SCANNER_ENABLED:false}
+      enabled: ${SKILLHUB_SECURITY_SCANNER_ENABLED:true}
       base-url: ${SKILLHUB_SECURITY_SCANNER_URL:http://localhost:8000}
       health-path: /health
       scan-path: /scan-upload

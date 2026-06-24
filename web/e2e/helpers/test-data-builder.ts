@@ -1,8 +1,9 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import type { APIRequestContext, Page, TestInfo } from '@playwright/test'
+import { csrfHeaders } from './csrf'
 
 type CleanupTask = () => Promise<void>
 
@@ -15,6 +16,7 @@ export interface SeededNamespace {
   currentUserRole?: string
   canUnfreeze?: boolean
   canRestore?: boolean
+  canDelete?: boolean
 }
 
 export interface SeededSkill {
@@ -64,6 +66,11 @@ export interface SeedSkillOptions {
   description?: string
   version?: string
   readmeHeading?: string
+  readmeBody?: string
+  extraFiles?: Array<{
+    path: string
+    content: string
+  }>
 }
 
 function asApiErrorBody(value: unknown): string {
@@ -129,8 +136,13 @@ function buildSkillPackageZipBuffer(suffix: string, options?: SeedSkillOptions):
 
     execFileSync('mkdir', ['-p', packageDir])
     writeFileSync(path.join(packageDir, 'SKILL.md'), skillMd, 'utf8')
-    writeFileSync(path.join(packageDir, 'README.md'), `# ${readmeHeading}\n`, 'utf8')
-    execFileSync('zip', ['-q', '-r', zipPath, 'SKILL.md', 'README.md'], { cwd: packageDir })
+    writeFileSync(path.join(packageDir, 'README.md'), options?.readmeBody ?? `# ${readmeHeading}\n`, 'utf8')
+    for (const extraFile of options?.extraFiles ?? []) {
+      const targetPath = path.join(packageDir, extraFile.path)
+      mkdirSync(path.dirname(targetPath), { recursive: true })
+      writeFileSync(targetPath, extraFile.content, 'utf8')
+    }
+    execFileSync('zip', ['-q', '-r', zipPath, '.'], { cwd: packageDir })
     return readFileSync(zipPath)
   } finally {
     rmSync(tempRoot, { recursive: true, force: true })
@@ -145,8 +157,13 @@ function createSkillPackageZipFile(suffix: string, options?: SeedSkillOptions): 
 
   execFileSync('mkdir', ['-p', packageDir])
   writeFileSync(path.join(packageDir, 'SKILL.md'), skillMd, 'utf8')
-  writeFileSync(path.join(packageDir, 'README.md'), `# ${readmeHeading}\n`, 'utf8')
-  execFileSync('zip', ['-q', '-r', zipPath, 'SKILL.md', 'README.md'], { cwd: packageDir })
+  writeFileSync(path.join(packageDir, 'README.md'), options?.readmeBody ?? `# ${readmeHeading}\n`, 'utf8')
+  for (const extraFile of options?.extraFiles ?? []) {
+    const targetPath = path.join(packageDir, extraFile.path)
+    mkdirSync(path.dirname(targetPath), { recursive: true })
+    writeFileSync(targetPath, extraFile.content, 'utf8')
+  }
+  execFileSync('zip', ['-q', '-r', zipPath, '.'], { cwd: packageDir })
 
   return {
     filePath: zipPath,
@@ -221,12 +238,14 @@ export class E2eTestDataBuilder {
           displayName,
           description: `E2E namespace ${slug}`,
         },
+        headers: await csrfHeaders(this.page),
       }),
     )
 
     this.cleanupTasks.push(async () => {
       await this.request.post(`/api/web/namespaces/${encodeURIComponent(created.slug)}/archive`, {
         data: { reason: 'e2e cleanup' },
+        headers: await csrfHeaders(this.page),
       })
     })
 
@@ -254,13 +273,17 @@ export class E2eTestDataBuilder {
 
     if (namespace.status === 'FROZEN' && namespace.canUnfreeze) {
       return parseEnvelope<SeededNamespace>(
-        await this.request.post(`/api/web/namespaces/${encodeURIComponent(namespace.slug)}/unfreeze`),
+        await this.request.post(`/api/web/namespaces/${encodeURIComponent(namespace.slug)}/unfreeze`, {
+          headers: await csrfHeaders(this.page),
+        }),
       )
     }
 
     if (namespace.status === 'ARCHIVED' && namespace.canRestore) {
       return parseEnvelope<SeededNamespace>(
-        await this.request.post(`/api/web/namespaces/${encodeURIComponent(namespace.slug)}/restore`),
+        await this.request.post(`/api/web/namespaces/${encodeURIComponent(namespace.slug)}/restore`, {
+          headers: await csrfHeaders(this.page),
+        }),
       )
     }
 
@@ -466,11 +489,27 @@ export class E2eTestDataBuilder {
   }
 
   async approveReview(reviewTaskId: number, comment = 'Approved by Playwright E2E'): Promise<void> {
-    await parseEnvelope<ReviewTaskSummary>(
-      await this.request.post(`/api/web/reviews/${reviewTaskId}/approve`, {
-        data: { comment },
-      }),
-    )
+    let lastError: unknown
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      try {
+        await parseEnvelope<ReviewTaskSummary>(
+          await this.request.post(`/api/web/reviews/${reviewTaskId}/approve`, {
+            data: { comment },
+            headers: await csrfHeaders(this.page),
+          }),
+        )
+        return
+      } catch (error) {
+        lastError = error
+        const message = error instanceof Error ? error.message : ''
+        const isScanInProgress = message.includes('扫描') || message.toLowerCase().includes('scan is still in progress')
+        if (!isScanInProgress) {
+          throw error
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1_000))
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error('approveReview timed out')
   }
 
   async searchNamespaceMemberCandidates(slug: string, search: string): Promise<NamespaceCandidate[]> {
@@ -484,6 +523,7 @@ export class E2eTestDataBuilder {
     await parseEnvelope<{ userId: string; role: string }>(
       await this.request.post(`/api/web/namespaces/${encodeURIComponent(slug)}/members`, {
         data: { userId, role },
+        headers: await csrfHeaders(this.page),
       }),
     )
   }
@@ -502,11 +542,14 @@ export class E2eTestDataBuilder {
           },
           visibility: 'PUBLIC',
         },
+        headers: await csrfHeaders(this.page),
       }),
     )
 
     this.cleanupTasks.push(async () => {
-      await this.request.delete(`/api/web/skills/${encodeURIComponent(result.namespace)}/${encodeURIComponent(result.slug)}`)
+      await this.request.delete(`/api/web/skills/${encodeURIComponent(result.namespace)}/${encodeURIComponent(result.slug)}`, {
+        headers: await csrfHeaders(this.page),
+      })
     })
 
     return result

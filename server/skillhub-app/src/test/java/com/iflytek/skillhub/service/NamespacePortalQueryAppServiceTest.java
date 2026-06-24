@@ -29,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 class NamespacePortalQueryAppServiceTest {
 
@@ -55,11 +56,13 @@ class NamespacePortalQueryAppServiceTest {
         when(namespaceAccessPolicy.canUnfreeze(alpha, NamespaceRole.OWNER)).thenReturn(false);
         when(namespaceAccessPolicy.canArchive(alpha, NamespaceRole.OWNER)).thenReturn(true);
         when(namespaceAccessPolicy.canRestore(alpha, NamespaceRole.OWNER)).thenReturn(false);
+        when(namespaceService.canDelete(alpha, NamespaceRole.OWNER)).thenReturn(true);
         when(namespaceAccessPolicy.isImmutable(zeta)).thenReturn(false);
         when(namespaceAccessPolicy.canFreeze(zeta, NamespaceRole.ADMIN)).thenReturn(true);
         when(namespaceAccessPolicy.canUnfreeze(zeta, NamespaceRole.ADMIN)).thenReturn(false);
         when(namespaceAccessPolicy.canArchive(zeta, NamespaceRole.ADMIN)).thenReturn(true);
         when(namespaceAccessPolicy.canRestore(zeta, NamespaceRole.ADMIN)).thenReturn(false);
+        when(namespaceService.canDelete(zeta, NamespaceRole.ADMIN)).thenReturn(false);
 
         var response = service.listMyNamespaces(Map.of(
                 2L, NamespaceRole.ADMIN,
@@ -69,8 +72,10 @@ class NamespacePortalQueryAppServiceTest {
         assertThat(response).hasSize(2);
         assertThat(response.get(0).slug()).isEqualTo("alpha");
         assertThat(response.get(0).currentUserRole()).isEqualTo(NamespaceRole.OWNER);
+        assertThat(response.get(0).canDelete()).isTrue();
         assertThat(response.get(1).slug()).isEqualTo("zeta");
         assertThat(response.get(1).currentUserRole()).isEqualTo(NamespaceRole.ADMIN);
+        assertThat(response.get(1).canDelete()).isFalse();
     }
 
     @Test
@@ -127,7 +132,7 @@ class NamespacePortalQueryAppServiceTest {
         when(userAccountRepository.findByIdIn(List.of("user-2")))
                 .thenReturn(List.of(user));
 
-        PageResponse<MemberResponse> result = service.listMembers("team-a", PageRequest.of(0, 20), "owner-1");
+        PageResponse<MemberResponse> result = service.listMembers("team-a", PageRequest.of(0, 20), "owner-1", Set.of());
 
         assertThat(result.items()).hasSize(1);
         MemberResponse mr = result.items().get(0);
@@ -149,12 +154,25 @@ class NamespacePortalQueryAppServiceTest {
         when(userAccountRepository.findByIdIn(List.of("ghost-user")))
                 .thenReturn(List.of());
 
-        PageResponse<MemberResponse> result = service.listMembers("team-a", PageRequest.of(0, 20), "owner-1");
+        PageResponse<MemberResponse> result = service.listMembers("team-a", PageRequest.of(0, 20), "owner-1", Set.of());
 
         assertThat(result.items()).hasSize(1);
         MemberResponse mr = result.items().get(0);
         assertThat(mr.userId()).isEqualTo("ghost-user");
         assertThat(mr.displayName()).isNull();
         assertThat(mr.email()).isNull();
+    }
+
+    @Test
+    void listMembers_globalNamespaceRejectsRegularUsersEvenWhenTheyAreGlobalMembers() {
+        Namespace ns = namespace(1L, "global");
+        ns.setType(NamespaceType.GLOBAL);
+        when(namespaceService.getNamespaceBySlug("global")).thenReturn(ns);
+        when(namespaceMemberService.listMembers(eq(1L), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        assertThatThrownBy(() -> service.listMembers("global", PageRequest.of(0, 20), "user-1", Set.of()))
+                .isInstanceOf(DomainForbiddenException.class)
+                .hasMessageContaining("error.namespace.global.members.platformAdmin.required");
     }
 }

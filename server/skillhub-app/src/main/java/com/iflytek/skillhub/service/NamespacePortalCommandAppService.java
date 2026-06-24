@@ -83,6 +83,13 @@ public class NamespacePortalCommandAppService {
     }
 
     @Transactional
+    public MessageResponse deleteNamespace(String slug, String userId) {
+        Namespace namespace = namespaceService.getNamespaceBySlug(slug);
+        namespaceService.deleteNamespace(namespace.getId(), userId);
+        return new MessageResponse("Namespace deleted successfully");
+    }
+
+    @Transactional
     public NamespaceResponse freezeNamespace(String slug,
                                              NamespaceLifecycleRequest request,
                                              String userId,
@@ -206,6 +213,13 @@ public class NamespacePortalCommandAppService {
                 operatorUserId
         );
         return MemberResponse.from(member, userAccountRepository.findById(userId).orElse(null));
+    }
+
+    @Transactional
+    public MessageResponse transferOwnership(String slug, String newOwnerId, String currentOwnerId) {
+        Namespace namespace = namespaceService.getNamespaceBySlug(slug);
+        namespaceMemberService.transferOwnership(namespace.getId(), currentOwnerId, newOwnerId);
+        return new MessageResponse("Ownership transferred successfully");
     }
 
     private boolean canCreateNamespace(PlatformPrincipal principal) {

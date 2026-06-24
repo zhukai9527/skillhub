@@ -103,7 +103,12 @@
       "tip": "💡 提示：访问技能详情页可获取带环境变量的一键复制安装命令",
       "tabs": {
         "agent": "我是 Agent",
-        "human": "我是 Human"
+        "human": "我是 Human",
+        "cli": "CLI"
+      },
+      "cli": {
+        "description": "安装 SkillHub CLI 到本地，后续可运行 skillhub install 安装技能",
+        "command": "npm i -g @astron-team/skillhub"
       },
       "agent": {
         "description": "发送提示词给你的 Agent，以设置SkillHub Registry",
@@ -184,6 +189,7 @@
     "noStarredResults": "未找到已收藏技能",
     "noStarredResultsFor": "已收藏技能中没有与 \"{{q}}\" 相关的结果",
     "noStarredSkills": "你还没有收藏任何技能",
+    "namespaceFilter": "@{{namespace}}",
     "enterKeyword": "请输入搜索关键词",
     "results": "找到 {{count}} 个技能",
     "resultCount": "找到 <1>{{count}}</1> 个结果",
@@ -334,6 +340,12 @@
   "mySkills": {
     "title": "我的技能",
     "subtitle": "管理你发布的技能",
+    "searchPlaceholder": "搜索技能名称、Slug 或描述",
+    "namespaceFilterLabel": "按命名空间过滤",
+    "namespaceFilterAll": "全部命名空间",
+    "clearSearch": "清除筛选",
+    "emptySearchTitle": "未找到匹配的技能",
+    "emptySearchDescription": "试试调整关键字或切换命名空间",
     "filters": {
       "ALL": "全部",
       "PENDING_REVIEW": "待审核",
@@ -428,6 +440,7 @@
     "unfreeze": "解冻",
     "archive": "归档",
     "restore": "恢复",
+    "delete": "删除",
     "activeHint": "命名空间运行正常，可继续管理成员、处理审核和发布技能。",
     "frozenHint": "命名空间已冻结。成员仍可查看，但当前处于只读状态，不能继续发布或变更成员。",
     "archivedHint": "命名空间已归档。公开入口已隐藏，但你仍可在管理台查看并恢复。",
@@ -440,6 +453,8 @@
     "archiveConfirmDescription": "归档后“{{name}}”会从公开入口隐藏，仅保留管理台恢复入口。",
     "restoreConfirmTitle": "确认恢复命名空间",
     "restoreConfirmDescription": "恢复后“{{name}}”会重新进入可运营状态。",
+    "deleteConfirmTitle": "确认删除命名空间",
+    "deleteConfirmDescription": "删除后会永久移除“{{name}}”，且无法恢复。",
     "freezeSuccessTitle": "命名空间已冻结",
     "freezeSuccessDescription": "“{{name}}”已切换为只读状态。",
     "freezeErrorTitle": "冻结命名空间失败",
@@ -452,6 +467,9 @@
     "restoreSuccessTitle": "命名空间已恢复",
     "restoreSuccessDescription": "“{{name}}”已重新开放治理能力。",
     "restoreErrorTitle": "恢复命名空间失败",
+    "deleteSuccessTitle": "命名空间已删除",
+    "deleteSuccessDescription": "“{{name}}”已被永久删除。",
+    "deleteErrorTitle": "删除命名空间失败",
     "emptyTitle": "还没有命名空间",
     "emptyDescription": "创建一个命名空间来组织你的技能"
   },
@@ -536,7 +554,23 @@
     "commentPlaceholder": "审核意见（可选）",
     "approve": "通过",
     "reject": "拒绝",
-    "empty": "暂无提升申请"
+    "empty": "暂无提升申请",
+    "historyTableLabel": "提升审核历史",
+    "colSkill": "技能",
+    "colVersion": "版本",
+    "colSubmitter": "提交人",
+    "colReviewer": "审核人",
+    "colReviewedAt": "处理时间",
+    "colReviewComment": "审核意见",
+    "sortReviewedTimeAsc": "按处理时间正序排序",
+    "sortReviewedTimeDesc": "按处理时间倒序排序",
+    "emptyValue": "-",
+    "versionTag": "v{{version}}",
+    "submitterTag": "提交人 {{user}}",
+    "fileCountTag": "{{count}} 个文件",
+    "packageSizeTag": "{{size}}",
+    "downloadCountTag": "{{value}} 次下载",
+    "starCountTag": "{{value}} 个星标"
   },
   "adminUsers": {
     "title": "用户管理",
@@ -553,6 +587,8 @@
     "filterDisabled": "已禁用",
     "empty": "暂无用户数据",
     "colUsername": "用户名",
+    "colUserId": "用户 ID",
+    "copyUserId": "复制 {{username}} 的用户 ID",
     "colEmail": "邮箱",
     "colStatus": "状态",
     "colRole": "角色",
@@ -723,6 +759,8 @@
     "successTitle": "密码修改成功",
     "successDescription": "请使用新密码重新登录。",
     "defaultError": "修改密码失败",
+    "unavailableTitle": "此账号暂不可修改密码。",
+    "unavailableDescription": "此账号通过外部身份提供方登录，或尚未配置本地密码凭据。",
     "submitting": "提交中...",
     "submit": "更新密码"
   },
@@ -771,6 +809,8 @@
     "documentationSource": "来源：{{path}}",
     "documentationUnavailableTitle": "文档暂时不可用",
     "documentationUnavailable": "当前无法读取这个技能版本的文档文件。你仍然可以在文件列表里查看包内容。",
+    "packageLinkMissingTitle": "文件未找到",
+    "packageLinkMissingDescription": "该链接指向的文件不在当前技能版本中。",
     "authorLabel": "作者 {{name}}",
     "expandOverview": "展开全文",
     "collapseOverview": "收起内容",
@@ -788,6 +828,8 @@
     "namespaceLabel": "命名空间",
     "loginToRate": "登录后可以收藏和评分",
     "install": "安装",
+    "installMethodClawhub": "ClawHub CLI",
+    "installMethodSkillhub": "SkillHub CLI",
     "download": "下载",
     "labelsSectionTitle": "标签管理",
     "labelsSectionDescription": "为这个技能挂载或移除推荐标签，帮助用户筛选和发现。",
@@ -964,6 +1006,27 @@
       "defaultDescription": "实用技能"
     }
   },
+  "skillCompare": {
+    "pageTitle": "版本对比",
+    "filesChanged": "{{count}} 个文件变更",
+    "searchFiles": "搜索文件",
+    "errorLoadingCompare": "加载版本对比失败",
+    "loadDiff": "加载差异",
+    "loading": "加载中...",
+    "totalFiles": "文件数",
+    "addedLines": "新增行",
+    "removedLines": "删除行",
+    "baseVersion": "基础版本",
+    "headVersion": "目标版本",
+    "fileList": "文件列表",
+    "binaryFile": "二进制文件，无法展示差异",
+    "truncatedFile": "差异输出已截断",
+    "notEnoughPublishedVersions": "至少发布两个版本后才能进行对比。",
+    "noFilesFound": "未找到匹配文件。",
+    "changeTypeAdded": "新增",
+    "changeTypeModified": "修改",
+    "changeTypeRemoved": "删除"
+  },
   "reports": {
     "title": "技能举报",
     "subtitle": "处理用户提交的技能举报",
@@ -1079,6 +1142,21 @@
     "removeSuccessTitle": "成员已移除",
     "removeSuccessDescription": "用户 {{userId}} 已从当前命名空间移除。",
     "removeErrorTitle": "移除成员失败",
+    "searchEmptyMemberHint": "如果该用户已在本命名空间，此处不会显示——请到成员列表确认。",
+    "transferOwnership": "转交 Owner",
+    "transferDialogTitle": "转交命名空间 Owner",
+    "transferDialogDescription": "将所有权转交给其他成员。转交后您将变为 ADMIN。",
+    "transferWarning": "此操作不可撤销。转交后您将不再是 Owner。",
+    "transferNewOwnerLabel": "新 Owner",
+    "transferSelectPlaceholder": "选择一位成员",
+    "transferNoCandidates": "没有其他成员可接手 Owner。",
+    "transferConfirmSlugPrompt": "输入命名空间 slug 以确认",
+    "transferConfirmSlugHint": "输入 {{slug}} 以确认",
+    "transferConfirmAction": "确认转交",
+    "transferring": "转交中...",
+    "transferSuccessTitle": "Owner 已转交",
+    "transferSuccessDescription": "{{userId}} 现在是本命名空间的 Owner。",
+    "transferErrorTitle": "转交 Owner 失败",
     "batchImport": "批量导入",
     "batchDialogTitle": "批量导入成员",
     "batchDialogDescription": "上传 CSV 文件批量添加成员。每行包含一个用户 ID 和角色。",
@@ -1110,6 +1188,17 @@
     "batchResultUnknownError": "未知错误",
     "batchDone": "完成",
     "batchBack": "返回"
+  },
+  "namespaceEdit": {
+    "editButton": "编辑",
+    "dialogTitle": "编辑命名空间",
+    "displayNameLabel": "显示名称",
+    "displayNameRequired": "显示名称不能为空",
+    "descriptionLabel": "描述",
+    "saveAction": "保存",
+    "saving": "保存中...",
+    "saveSuccess": "命名空间已更新",
+    "saveErrorTitle": "更新命名空间失败"
   },
   "upload": {
     "dropHint": "放开以上传文件...",
@@ -1218,7 +1307,8 @@
     "prev": "上一页",
     "next": "下一页",
     "pagePrefix": "第",
-    "pageSuffix": "页"
+    "pageSuffix": "页",
+    "goToPage": "第 {{page}} 页"
   },
   "user": {
     "menu": {

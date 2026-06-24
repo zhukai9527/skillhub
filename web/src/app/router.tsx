@@ -71,6 +71,7 @@ const SearchPage = createLazyRouteComponent(() => import('@/pages/search'), 'Sea
 const TermsOfServicePage = createLazyRouteComponent(() => import('@/pages/terms'), 'TermsOfServicePage')
 const NamespacePage = createLazyRouteComponent(() => import('@/pages/namespace'), 'NamespacePage')
 const SkillDetailPage = createLazyRouteComponent(() => import('@/pages/skill-detail'), 'SkillDetailPage')
+const SkillVersionComparePage = createLazyRouteComponent(() => import('@/pages/skill-version-compare'), 'SkillVersionComparePage')
 const DashboardPage = createLazyRouteComponent(() => import('@/pages/dashboard'), 'DashboardPage')
 const MySkillsPage = createLazyRouteComponent(() => import('@/pages/dashboard/my-skills'), 'MySkillsPage')
 const PublishPage = createLazyRouteComponent(() => import('@/pages/dashboard/publish'), 'PublishPage')
@@ -198,9 +199,10 @@ const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'search',
   component: SearchPage,
-  validateSearch: (search: Record<string, unknown>): { q: string; label?: string; sort: string; page: number; starredOnly: boolean } => {
+  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; sort: string; page: number; starredOnly: boolean } => {
     return {
       q: normalizeSearchQuery(typeof search.q === 'string' ? search.q : ''),
+      namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace.replace(/^@/, '') : undefined,
       label: typeof search.label === 'string' && search.label ? search.label : undefined,
       sort: (search.sort as string) || 'newest',
       page: Number(search.page) || 0,
@@ -231,6 +233,16 @@ const skillDetailRoute = createRoute({
   component: SkillDetailPage,
 })
 
+const skillVersionCompareRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/space/$namespace/$slug/compare',
+  validateSearch: (search: Record<string, unknown>): { from: string; to: string } => ({
+    from: typeof search.from === 'string' ? search.from : '',
+    to: typeof search.to === 'string' ? search.to : '',
+  }),
+  component: SkillVersionComparePage,
+})
+
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard',
@@ -242,6 +254,12 @@ const dashboardSkillsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/skills',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { page?: number; q?: string; namespace?: string; filter?: string } => ({
+    page: typeof search.page === 'number' ? search.page : undefined,
+    q: typeof search.q === 'string' && search.q ? search.q : undefined,
+    namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace : undefined,
+    filter: typeof search.filter === 'string' && search.filter ? search.filter : undefined,
+  }),
   component: MySkillsPage,
 })
 
@@ -288,6 +306,9 @@ const dashboardReviewsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/reviews',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { type?: 'skill' | 'profile' } => ({
+    type: search.type === 'skill' || search.type === 'profile' ? search.type : undefined,
+  }),
   component: ReviewsPage,
 })
 
@@ -424,6 +445,7 @@ const routeTree = rootRoute.addChildren([
   termsRoute,
   namespaceRoute,
   skillDetailRoute,
+  skillVersionCompareRoute,
   dashboardRoute,
   dashboardSkillsRoute,
   dashboardPublishRoute,

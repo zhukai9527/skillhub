@@ -14,6 +14,9 @@ public interface PromotionRequestRepository {
     Optional<PromotionRequest> findBySourceVersionIdAndStatus(Long sourceVersionId, ReviewTaskStatus status);
     Optional<PromotionRequest> findBySourceSkillIdAndStatus(Long sourceSkillId, ReviewTaskStatus status);
     Page<PromotionRequest> findByStatus(ReviewTaskStatus status, Pageable pageable);
+    Page<PromotionRequest> findHistoryByStatusOrderByReviewedAtAsc(ReviewTaskStatus status, Pageable pageable);
+    Page<PromotionRequest> findHistoryByStatusOrderByReviewedAtDesc(ReviewTaskStatus status, Pageable pageable);
+    boolean existsByTargetNamespaceId(Long namespaceId);
     void deleteBySourceSkillIdOrTargetSkillId(Long sourceSkillId, Long targetSkillId);
     int updateStatusWithVersion(Long id, ReviewTaskStatus status, String reviewedBy,
                                String reviewComment, Long targetSkillId, Integer expectedVersion);

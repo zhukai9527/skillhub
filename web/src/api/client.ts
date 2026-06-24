@@ -15,6 +15,9 @@ import type {
   MergeVerifyRequest,
   ReviewSkillDetail,
   ReviewTask,
+  PromotionSortBy,
+  PromotionSortDirection,
+  PromotionStatus,
   PromotionTask,
   AuditLogItem,
   SkillSummary,
@@ -675,9 +678,19 @@ export const namespaceApi = {
     })
   },
 
-  async listMembers(slug: string): Promise<NamespaceMember[]> {
-    const page = await fetchJson<{ items: NamespaceMember[] }>(`${WEB_API_PREFIX}/namespaces/${normalizeNamespaceSlug(slug)}/members`)
-    return page.items
+  async delete(slug: string): Promise<void> {
+    await fetchJson<void>(`${WEB_API_PREFIX}/namespaces/${normalizeNamespaceSlug(slug)}`, {
+      method: 'DELETE',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async listMembers(slug: string, params?: { page?: number; size?: number }): Promise<PagedResponse<NamespaceMember>> {
+    const queryPage = params?.page ?? 0
+    const querySize = params?.size ?? 20
+    return fetchJson<PagedResponse<NamespaceMember>>(
+      `${WEB_API_PREFIX}/namespaces/${normalizeNamespaceSlug(slug)}/members?page=${queryPage}&size=${querySize}`,
+    )
   },
 
   async searchMemberCandidates(slug: string, search: string, size = 10): Promise<NamespaceCandidateUser[]> {
@@ -730,6 +743,33 @@ export const namespaceApi = {
     await fetchJson<void>(`${WEB_API_PREFIX}/namespaces/${normalizeNamespaceSlug(slug)}/members/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
       headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async update(slug: string, request: { displayName?: string; description?: string }): Promise<Namespace> {
+    const body: Record<string, string> = {}
+    if (request.displayName !== undefined) {
+      body.displayName = request.displayName.trim()
+    }
+    if (request.description !== undefined) {
+      body.description = request.description === '' ? '' : request.description.trim()
+    }
+    return fetchJson<Namespace>(`/api/v1/namespaces/${normalizeNamespaceSlug(slug)}`, {
+      method: 'PUT',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(body),
+    })
+  },
+
+  async transferOwnership(slug: string, newOwnerUserId: string): Promise<{ message: string }> {
+    return fetchJson<{ message: string }>(`${WEB_API_PREFIX}/namespaces/${normalizeNamespaceSlug(slug)}/transfer-ownership`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ newOwnerId: newOwnerUserId.trim() }),
     })
   },
 }
@@ -862,11 +902,17 @@ export const promotionApi = {
     })
   },
 
-  async list(params: { status?: string; page?: number; size?: number }) {
+  async list(params: { status?: PromotionStatus; page?: number; size?: number; sortBy?: PromotionSortBy; sortDirection?: PromotionSortDirection }) {
     const searchParams = new URLSearchParams()
     searchParams.set('status', params.status ?? 'PENDING')
     searchParams.set('page', String(params.page ?? 0))
     searchParams.set('size', String(params.size ?? 20))
+    if (params.sortBy) {
+      searchParams.set('sortBy', params.sortBy)
+    }
+    if (params.sortDirection) {
+      searchParams.set('sortDirection', params.sortDirection)
+    }
     return fetchJson<{ items: PromotionTask[]; total: number; page: number; size: number }>(
       `${WEB_API_PREFIX}/promotions?${searchParams.toString()}`,
     )
@@ -987,12 +1033,18 @@ export const governanceApi = {
 }
 
 export const meApi = {
-  async getSkills(params?: { page?: number; size?: number; filter?: string }): Promise<{ items: SkillSummary[]; total: number; page: number; size: number }> {
+  async getSkills(params?: { page?: number; size?: number; filter?: string; q?: string; namespace?: string }): Promise<{ items: SkillSummary[]; total: number; page: number; size: number }> {
     const searchParams = new URLSearchParams()
     searchParams.set('page', String(params?.page ?? 0))
     searchParams.set('size', String(params?.size ?? 10))
     if (params?.filter) {
       searchParams.set('filter', params.filter)
+    }
+    if (params?.q) {
+      searchParams.set('q', params.q)
+    }
+    if (params?.namespace) {
+      searchParams.set('namespace', params.namespace)
     }
     return fetchJson<{ items: SkillSummary[]; total: number; page: number; size: number }>(`${WEB_API_PREFIX}/me/skills?${searchParams.toString()}`)
   },

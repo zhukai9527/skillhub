@@ -16,6 +16,7 @@ import com.iflytek.skillhub.dto.NamespaceLifecycleRequest;
 import com.iflytek.skillhub.dto.NamespaceRequest;
 import com.iflytek.skillhub.dto.NamespaceResponse;
 import com.iflytek.skillhub.dto.PageResponse;
+import com.iflytek.skillhub.dto.TransferOwnershipRequest;
 import com.iflytek.skillhub.dto.UpdateMemberRoleRequest;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.service.GovernanceWorkflowAppService;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Namespace portal endpoints for discovery, membership management, and
@@ -95,6 +97,14 @@ public class NamespaceController extends BaseApiController {
                 namespacePortalCommandAppService.updateNamespace(slug, request, userId));
     }
 
+    @DeleteMapping("/namespaces/{slug}")
+    public ApiResponse<MessageResponse> deleteNamespace(
+            @PathVariable String slug,
+            @RequestAttribute("userId") String userId) {
+        return ok("response.success.deleted",
+                namespacePortalCommandAppService.deleteNamespace(slug, userId));
+    }
+
     @PostMapping("/namespaces/{slug}/freeze")
     public ApiResponse<NamespaceResponse> freezeNamespace(@PathVariable String slug,
                                                           @RequestBody(required = false) NamespaceLifecycleRequest request,
@@ -146,9 +156,13 @@ public class NamespaceController extends BaseApiController {
     @GetMapping("/namespaces/{slug}/members")
     public ApiResponse<PageResponse<MemberResponse>> listMembers(@PathVariable String slug,
                                                                  Pageable pageable,
-                                                                 @RequestAttribute("userId") String userId) {
+                                                                 @RequestAttribute("userId") String userId,
+                                                                 @AuthenticationPrincipal PlatformPrincipal principal) {
+        Set<String> platformRoles = principal != null && principal.platformRoles() != null
+                ? principal.platformRoles()
+                : Set.of();
         return ok("response.success.read",
-                namespacePortalQueryAppService.listMembers(slug, pageable, userId));
+                namespacePortalQueryAppService.listMembers(slug, pageable, userId, platformRoles));
     }
 
     @GetMapping("/namespaces/{slug}/member-candidates")
@@ -195,5 +209,14 @@ public class NamespaceController extends BaseApiController {
             @RequestAttribute("userId") String operatorUserId) {
         return ok("response.success.updated",
                 namespacePortalCommandAppService.updateMemberRole(slug, userId, request, operatorUserId));
+    }
+
+    @PostMapping("/namespaces/{slug}/transfer-ownership")
+    public ApiResponse<MessageResponse> transferOwnership(
+            @PathVariable String slug,
+            @Valid @RequestBody TransferOwnershipRequest request,
+            @RequestAttribute("userId") String currentOwnerId) {
+        return ok("response.success.updated",
+                namespacePortalCommandAppService.transferOwnership(slug, request.newOwnerId(), currentOwnerId));
     }
 }
